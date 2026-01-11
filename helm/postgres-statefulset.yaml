@@ -3,6 +3,8 @@ kind: StatefulSet
 metadata:
   name: postgresql
   namespace: db
+  labels:
+    app: postgresql
 spec:
   serviceName: postgresql
   replicas: 1
@@ -19,27 +21,57 @@ spec:
           image: postgres:17-bookworm
           ports:
             - containerPort: 5432
-          env:
-            - name: POSTGRES_DB
-              value: auth
-            - name: POSTGRES_USER
-              value: postgres
-            - name: POSTGRES_PASSWORD
-              value: postgres
+              name: postgresql
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
           volumeMounts:
             - name: pg-data
               mountPath: /var/lib/postgresql/data
+              subPath: postgres  # Для изоляции данных
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
           readinessProbe:
             exec:
               command: ["pg_isready", "-U", "postgres"]
-            initialDelaySeconds: 10
+            initialDelaySeconds: 15
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres"]
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          securityContext:
+            runAsUser: 1001
+            runAsGroup: 1001
+            fsGroup: 1001
+            allowPrivilegeEscalation: false
+          # Оптимизация производительности для контейнера
+          args: 
+            - "-c"
+            - "shared_buffers=256MB"
+            - "-c"
+            - "max_connections=100"
   volumeClaimTemplates:
     - metadata:
         name: pg-data
+        labels:
+          app: postgresql
       spec:
         storageClassName: standard
         accessModes: ["ReadWriteOnce"]
         resources:
           requests:
-            storage: 2Gi
+            storage: 5Gi  # Увеличил до 5GB, т.к. 2GB мало для PostgreSQL

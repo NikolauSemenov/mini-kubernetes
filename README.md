@@ -9,6 +9,10 @@
 ### 2. Load files from /helm
     kubectl apply -f helm
 
+### 3.
+    minikube addons enable ingress
+
+
 ### 3. Пробрасываем порты на локальный хост, если требуется подключиться к бд/брокеру с локальной машины
     kubectl port-forward svc/postgresql 14105:5432
     kubectl port-forward svc/redis 6379:6379
@@ -21,7 +25,7 @@
     kubectl apply -f https://strimzi.io/examples/latest/kafka/kafka-single-node.yaml -n kafka
     kubectl wait kafka/my-cluster --for=condition=Ready --timeout=300s -n kafka 
 
-### 5.
+### 5. Применить миграции
     kubectl exec -it -n backend deploy/note-flow -- /bin/bash
     alembic upgrade head
 
