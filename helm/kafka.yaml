@@ -1,0 +1,27 @@
+apiVersion: kafka.strimzi.io/v1
+kind: Kafka
+metadata:
+  name: my-kafka
+  namespace: kafka
+spec:
+  kafka:
+    version: 4.1.1
+    listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+    config:
+      process.roles: broker,controller
+      controller.listener.names: CONTROLLER
+      listeners: |
+        PLAINTEXT://:9092
+        CONTROLLER://:9093
+      inter.broker.listener.name: PLAINTEXT
+      controller.quorum.voters: 0@my-kafka-brokers-0.my-kafka-brokers.kafka.svc:9093
+      offsets.topic.replication.factor: 1
+      transaction.state.log.replication.factor: 1
+      transaction.state.log.min.isr: 1
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
