@@ -37,5 +37,7 @@
 
 
 ### 8. 
-    eval $(minikube docker-env)
-    docker build -t note-flow:latest .
+    eval $(minikube docker-env) && docker build -t note-flow:latest .
+
+### 9. 
+  ssh -L 8085:192.168.49.2:80 nikolau@192.168.0.52
