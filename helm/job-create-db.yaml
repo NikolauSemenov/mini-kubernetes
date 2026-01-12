@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: create-databases
+  namespace: db
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: create-db
+          image: postgres:17-bookworm
+          env:
+            - name: PGHOST
+              value: postgresql.db.svc.cluster.local
+            - name: PGPORT
+              value: "5432"
+            - name: PGUSER
+              value: postgres
+            - name: PGPASSWORD
+              value: postgres
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for PostgreSQL..."
+              until pg_isready; do sleep 2; done
+
+              echo "Creating databases..."
+
+              psql -v ON_ERROR_STOP=1 <<-EOSQL
+                SELECT 'CREATE DATABASE auth'
+                WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'auth')\gexec
+
+                SELECT 'CREATE DATABASE "note-flow"'
+                WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'note-flow')\gexec
+              EOSQL
+
+              echo "Databases created successfully"
